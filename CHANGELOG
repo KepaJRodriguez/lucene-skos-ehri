@@ -1,0 +1,25 @@
+2013-11-8
+    RELEASE 0.4.5
+
+    * Support for Lucene/Solr 4.5.1
+    * Added SKOSStandardQueryParser for Lucene
+
+2013-11-07
+    RELEASE 0.4
+    
+    * Support for Lucene/Solr 4.2.1
+
+2012-08-09
+    RELEASE 0.2
+    
+    * Added entailment in SKOSEngine
+    * Upgraded code to support Lucene 3.x and Solr 3.6
+    * Added more configuration options for filters
+    * Indexes are now written to disk and reused later
+    * ZIP file support
+
+2010-08-13
+    RELEASE 0.1
+    
+    * Implemented URI-based term expansion for Lucene and Solr
+    * Implemented Label-based term expansion for Lucene and Solr
