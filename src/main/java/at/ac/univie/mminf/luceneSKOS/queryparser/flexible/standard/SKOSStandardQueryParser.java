@@ -40,6 +40,10 @@ public class SKOSStandardQueryParser extends StandardQueryParser {
       put(SKOSType.BROADERTRANSITIVE, 0f);
       put(SKOSType.NARROWERTRANSITIVE, 0f);
       put(SKOSType.RELATED, 0f);
+      //for EHRI extension
+      put(SKOSType.PREFMALE, 0f);
+      put(SKOSType.PREFFEMALE, 0f);
+      put(SKOSType.PREFNEUTER, 0f);
     }
   };
   
