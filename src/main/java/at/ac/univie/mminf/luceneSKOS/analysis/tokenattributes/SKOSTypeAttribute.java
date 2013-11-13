@@ -31,8 +31,8 @@ public interface SKOSTypeAttribute extends Attribute {
    * An enumeration of supported SKOS concept types
    */
   public static enum SKOSType {
-    
-    PREF, ALT, HIDDEN, BROADER, NARROWER, BROADERTRANSITIVE, NARROWERTRANSITIVE, RELATED;
+    //Add PREFMALE and PREFFEMALE for EHRI extension
+    PREF, ALT, HIDDEN, BROADER, NARROWER, BROADERTRANSITIVE, NARROWERTRANSITIVE, RELATED, PREFFEMALE, PREFMALE, PREFNEUTER;
     
     /**
      * Returns the SKOSType given the ordinal.
@@ -55,6 +55,12 @@ public interface SKOSTypeAttribute extends Attribute {
           return NARROWERTRANSITIVE;
         case 7:
           return RELATED;
+        case 8:
+            return PREFMALE;
+        case 9:
+            return PREFFEMALE;
+        case 10:
+            return PREFNEUTER;
         default:
           return RELATED;
       }
