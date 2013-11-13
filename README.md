@@ -1,5 +1,4 @@
-# SKOS Support for Apache Lucene and Solr 
-# Extendion of the plugin for the EHRI project
+# SKOS Support for Apache Lucene and Solr for EHRI portal 
 
 EHRI extension of lucene-skos Solr/Lucene plugin
 
