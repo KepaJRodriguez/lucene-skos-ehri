@@ -115,5 +115,13 @@ public class SKOS {
     public static final OntClass ConceptScheme = m_model.createClass( "http://www.w3.org/2004/02/skos/core#ConceptScheme" );
     
     public static final OntClass OrderedCollection = m_model.createClass( "http://www.w3.org/2004/02/skos/core#OrderedCollection" );
+   
     
+    /** <p>Added for EHRI extension: skos-ehri:prefMale, skos-ehri:prefFemale, skos-ehri:prefNeuter</p>
+     */
+    public static final AnnotationProperty prefMaleLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#prefMaleLabel" );
+    public static final AnnotationProperty prefFemaleLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#prefFemaleLabel" );
+    public static final AnnotationProperty prefNeuterLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#prefNeuterLabel" );
+    public static final AnnotationProperty altMaleLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#altMaleLabel" );
+    public static final AnnotationProperty altFemaleLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#altFemaleLabel" );
 }
