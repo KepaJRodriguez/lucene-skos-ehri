@@ -164,4 +164,25 @@ public interface SKOSEngine {
    */
   String[] getAltTerms(String label) throws IOException;
   
+  /**
+   * Returns the "preferred" labels (pref*Label) of EHRI-SKOS extension
+   * for a given concept URI
+   * @param conceptURI
+   * @return String[]
+   * @throws IOException
+   */
+  String[] getPrefMaleLabels(String conceptURI) throws IOException;
+  String[] getPrefFemaleLabels(String conceptURI) throws IOException;
+  String[] getPrefNeuterLabels(String conceptURI) throws IOException;
+  
+  /**
+   * Returns the "alternative" labels (alt*Label) of EHRI-SKOS extension
+   * for a given concept URI
+   * @param conceptURI
+   * @return String[]
+   * @throws IOException
+   */
+  String[] getAltMaleLabels(String conceptURI) throws IOException;
+  String[] getAltFemaleLabels(String conceptURI) throws IOException;
+  String[] getAltNeuterLabels(String conceptURI) throws IOException;
 }
