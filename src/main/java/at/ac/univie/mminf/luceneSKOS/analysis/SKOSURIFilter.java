@@ -120,6 +120,21 @@ public final class SKOSURIFilter extends AbstractSKOSFilter {
               .getNarrowerTransitiveLabels(term);
           pushLabelsToStack(narrowerTransitiveLabels, SKOSType.PREFNEUTER);
         }
+      if (types.contains(SKOSType.ALTMALE)) {
+          String[] narrowerTransitiveLabels = engine
+              .getNarrowerTransitiveLabels(term);
+          pushLabelsToStack(narrowerTransitiveLabels, SKOSType.ALTMALE);
+        }
+      if (types.contains(SKOSType.ALTFEMALE)) {
+          String[] narrowerTransitiveLabels = engine
+              .getNarrowerTransitiveLabels(term);
+          pushLabelsToStack(narrowerTransitiveLabels, SKOSType.ALTFEMALE);
+        }
+      if (types.contains(SKOSType.ALTNEUTER)) {
+          String[] narrowerTransitiveLabels = engine
+              .getNarrowerTransitiveLabels(term);
+          pushLabelsToStack(narrowerTransitiveLabels, SKOSType.ALTNEUTER);
+        }
     } catch (Exception e) {
       System.err
           .println("Error when accessing SKOS Engine.\n" + e.getMessage());
