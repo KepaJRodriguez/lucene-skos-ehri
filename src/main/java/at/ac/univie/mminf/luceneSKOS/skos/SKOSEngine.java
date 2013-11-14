@@ -165,7 +165,7 @@ public interface SKOSEngine {
   String[] getAltTerms(String label) throws IOException;
   
   /**
-   * Returns the "preferred" labels (pref*Label) of EHRI-SKOS extension
+   * Returns the "preferred" lexical labels (pref*Label) of EHRI-SKOS extension
    * for a given concept URI
    * @param conceptURI
    * @return String[]
@@ -176,7 +176,7 @@ public interface SKOSEngine {
   String[] getPrefNeuterLabels(String conceptURI) throws IOException;
   
   /**
-   * Returns the "alternative" labels (alt*Label) of EHRI-SKOS extension
+   * Returns the "alternative" lexical labels (alt*Label) of EHRI-SKOS extension
    * for a given concept URI
    * @param conceptURI
    * @return String[]
