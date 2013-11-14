@@ -197,6 +197,25 @@ public final class SKOSLabelFilter extends AbstractSKOSFilter {
             pushLabelsToStack(narrowerTransitiveLabels,
                 SKOSType.PREFNEUTER);
           }
+        if (types.contains(SKOSType.ALTMALE)) {
+            String[] narrowerTransitiveLabels = engine
+                .getNarrowerTransitiveLabels(conceptURI);
+            pushLabelsToStack(narrowerTransitiveLabels,
+                SKOSType.ALTMALE);
+          }
+        if (types.contains(SKOSType.ALTFEMALE)) {
+            String[] narrowerTransitiveLabels = engine
+                .getNarrowerTransitiveLabels(conceptURI);
+            pushLabelsToStack(narrowerTransitiveLabels,
+                SKOSType.ALTFEMALE);
+          }
+        if (types.contains(SKOSType.ALTNEUTER)) {
+            String[] narrowerTransitiveLabels = engine
+                .getNarrowerTransitiveLabels(conceptURI);
+            pushLabelsToStack(narrowerTransitiveLabels,
+                SKOSType.ALTNEUTER);
+          }
+        
       }
     } catch (Exception e) {
       System.err
