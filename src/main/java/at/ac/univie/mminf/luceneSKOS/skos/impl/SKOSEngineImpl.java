@@ -123,6 +123,13 @@ public class SKOSEngineImpl implements SKOSEngine {
   private static final String FIELD_BROADER_TRANSITIVE = "broaderTransitive";
   private static final String FIELD_NARROWER_TRANSITIVE = "narrowerTransitive";
   private static final String FIELD_RELATED = "related";
+  //for EHRI skos
+  private static final String FIELD_PREFMALE_LABEL = "prefMale";
+  private static final String FIELD_PREFFEMALE_LABEL = "prefFemale";
+  private static final String FIELD_PREFNEUTER_LABEL = "prefNeuter";
+  private static final String FIELD_ALTMALE_LABEL = "altMale";
+  private static final String FIELD_ALTFEMALE_LABEL = "altFemale";
+  private static final String FIELD_ALTNEUTER_LABEL = "altNeuter";
   
   /**
    * The input SKOS model
@@ -248,6 +255,7 @@ public class SKOSEngineImpl implements SKOSEngine {
     searcher = new IndexSearcher(DirectoryReader.open(indexDir));
   }
   
+  //extended to include EHRI extension
   private void entailSKOSModel() {
     GraphStore graphStore = GraphStoreFactory.create(skosModel) ;
     String sparqlQuery = StringUtils.join(new String[]{
@@ -257,6 +265,12 @@ public class SKOSEngineImpl implements SKOSEngine {
         "WHERE {",
           "{ ?subject skos:prefLabel ?text } UNION",
           "{ ?subject skos:altLabel ?text } UNION",
+          "{ ?subject skos-ehri:prefMaleLabel ?text } UNION",
+          "{ ?subject skos-ehri:prefFemaleLabel ?text } UNION",
+          "{ ?subject skos-ehri:prefNeuterLabel ?text } UNION",
+          "{ ?subject skos-ehri:altMaleLabel ?text } UNION",
+          "{ ?subject skos-ehri:altFemaleLabel ?text } UNION",
+          "{ ?subject skos-ehri:altNeuterLabel ?text } UNION",
           "{ ?subject skos:hiddenLabel ?text }",
          "}",
         }, "\n");
@@ -290,6 +304,14 @@ public class SKOSEngineImpl implements SKOSEngine {
     indexAnnotation(skos_concept, conceptDoc, SKOS.hiddenLabel,
         FIELD_HIDDEN_LABEL);
     
+    // store lexical labels for EHRI extension
+    indexAnnotation(skos_concept, conceptDoc, SKOS.prefMaleLabel, FIELD_PREFMALE_LABEL);
+    indexAnnotation(skos_concept, conceptDoc, SKOS.prefFemaleLabel, FIELD_PREFFEMALE_LABEL);
+    indexAnnotation(skos_concept, conceptDoc, SKOS.prefNeuterLabel, FIELD_PREFNEUTER_LABEL);
+    indexAnnotation(skos_concept, conceptDoc, SKOS.altMaleLabel, FIELD_ALTMALE_LABEL);
+    indexAnnotation(skos_concept, conceptDoc, SKOS.altFemaleLabel, FIELD_ALTFEMALE_LABEL);
+    indexAnnotation(skos_concept, conceptDoc, SKOS.altNeuterLabel, FIELD_ALTNEUTER_LABEL);
+    
     // store the URIs of the broader concepts
     indexObject(skos_concept, conceptDoc, SKOS.broader, FIELD_BROADER);
     
@@ -314,6 +336,22 @@ public class SKOSEngineImpl implements SKOSEngine {
   public String[] getAltLabels(String conceptURI) throws IOException {
     return readConceptFieldValues(conceptURI, FIELD_ALT_LABEL);
   }
+  
+  
+  @Override
+  public String[] getAltMaleLabels(String conceptURI) throws IOException {
+    return readConceptFieldValues(conceptURI, FIELD_ALTMALE_LABEL);
+  }
+    @Override
+  public String[] getAltFemaleLabels(String conceptURI) throws IOException {
+    return readConceptFieldValues(conceptURI, FIELD_ALTFEMALE_LABEL);
+  }
+  @Override
+  public String[] getAltNeuterLabels(String conceptURI) throws IOException {
+    return readConceptFieldValues(conceptURI, FIELD_ALTNEUTER_LABEL);
+  }
+  
+  
   
   @Override
   public String[] getAltTerms(String label) throws IOException {
@@ -381,6 +419,12 @@ public class SKOSEngineImpl implements SKOSEngine {
     query.add(new TermQuery(new Term(FIELD_PREF_LABEL, queryString)));
     query.add(new TermQuery(new Term(FIELD_ALT_LABEL, queryString)));
     query.add(new TermQuery(new Term(FIELD_HIDDEN_LABEL, queryString)));
+    query.add(new TermQuery(new Term(FIELD_PREFMALE_LABEL, queryString)));
+    query.add(new TermQuery(new Term(FIELD_PREFFEMALE_LABEL, queryString)));
+    query.add(new TermQuery(new Term(FIELD_PREFNEUTER_LABEL, queryString)));
+    query.add(new TermQuery(new Term(FIELD_ALTMALE_LABEL, queryString)));
+    query.add(new TermQuery(new Term(FIELD_ALTFEMALE_LABEL, queryString)));
+    query.add(new TermQuery(new Term(FIELD_ALTNEUTER_LABEL, queryString)));
     searcher.search(query, collector);
     
     for (Integer hit : collector.getDocs()) {
@@ -403,6 +447,21 @@ public class SKOSEngineImpl implements SKOSEngine {
       
       String[] altLabels = getAltLabels(aConceptURI);
       labels.addAll(Arrays.asList(altLabels));
+      
+      //EHRI-skos extension
+      String[] prefMaleLabels = getPrefMaleLabels(aConceptURI);
+      labels.addAll(Arrays.asList(prefMaleLabels));
+      String[] prefFemaleLabels = getPrefFemaleLabels(aConceptURI);
+      labels.addAll(Arrays.asList(prefFemaleLabels));
+      String[] prefNeuterLabels = getPrefNeuterLabels(aConceptURI);
+      labels.addAll(Arrays.asList(prefNeuterLabels));
+      String[] altMaleLabels = getAltMaleLabels(aConceptURI);
+      labels.addAll(Arrays.asList(altMaleLabels));
+      String[] altFemaleLabels = getAltFemaleLabels(aConceptURI);
+      labels.addAll(Arrays.asList(altFemaleLabels));
+      String[] altNeuterLabels = getAltNeuterLabels(aConceptURI);
+      labels.addAll(Arrays.asList(altNeuterLabels));
+      
     }
     
     return labels.toArray(new String[labels.size()]);
@@ -443,6 +502,21 @@ public class SKOSEngineImpl implements SKOSEngine {
   @Override
   public String[] getRelatedLabels(String conceptURI) throws IOException {
     return getLabels(conceptURI, FIELD_RELATED);
+  }
+  
+  @Override
+  public String[] getPrefMaleLabels(String conceptURI) throws IOException {
+    return readConceptFieldValues(conceptURI, FIELD_PREFMALE_LABEL);
+  }
+  
+  @Override
+  public String[] getPrefFemaleLabels(String conceptURI) throws IOException {
+    return readConceptFieldValues(conceptURI, FIELD_PREFFEMALE_LABEL);
+  }
+  
+  @Override
+  public String[] getPrefNeuterLabels(String conceptURI) throws IOException {
+    return readConceptFieldValues(conceptURI, FIELD_PREFNEUTER_LABEL);
   }
   
   private void indexAnnotation(Resource skos_concept, Document conceptDoc,
