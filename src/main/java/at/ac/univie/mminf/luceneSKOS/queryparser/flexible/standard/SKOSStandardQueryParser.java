@@ -44,6 +44,9 @@ public class SKOSStandardQueryParser extends StandardQueryParser {
       put(SKOSType.PREFMALE, 0f);
       put(SKOSType.PREFFEMALE, 0f);
       put(SKOSType.PREFNEUTER, 0f);
+      put(SKOSType.ALTMALE, 0f);
+      put(SKOSType.ALTFEMALE, 0f);
+      put(SKOSType.ALTNEUTER, 0f);
     }
   };
   
