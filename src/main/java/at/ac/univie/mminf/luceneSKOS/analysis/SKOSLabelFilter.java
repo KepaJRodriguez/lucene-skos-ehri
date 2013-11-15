@@ -180,39 +180,39 @@ public final class SKOSLabelFilter extends AbstractSKOSFilter {
         }
         // Added for EHRI extension
         if (types.contains(SKOSType.PREFMALE)) {
-            String[] narrowerTransitiveLabels = engine
-                .getNarrowerTransitiveLabels(conceptURI);
-            pushLabelsToStack(narrowerTransitiveLabels,
+            String[] prefMaleLabels = engine
+                .getPrefMaleLabels(conceptURI);
+            pushLabelsToStack(prefMaleLabels,
                 SKOSType.PREFMALE);
           }
         if (types.contains(SKOSType.PREFFEMALE)) {
-            String[] narrowerTransitiveLabels = engine
-                .getNarrowerTransitiveLabels(conceptURI);
-            pushLabelsToStack(narrowerTransitiveLabels,
+            String[] prefFemaleLabels = engine
+                .getPrefFemaleLabels(conceptURI);
+            pushLabelsToStack(prefFemaleLabels,
                 SKOSType.PREFFEMALE);
           }
         if (types.contains(SKOSType.PREFNEUTER)) {
-            String[] narrowerTransitiveLabels = engine
-                .getNarrowerTransitiveLabels(conceptURI);
-            pushLabelsToStack(narrowerTransitiveLabels,
+            String[] prefNeuterLabels = engine
+                .getPrefNeuterLabels(conceptURI);
+            pushLabelsToStack(prefNeuterLabels,
                 SKOSType.PREFNEUTER);
           }
         if (types.contains(SKOSType.ALTMALE)) {
-            String[] narrowerTransitiveLabels = engine
-                .getNarrowerTransitiveLabels(conceptURI);
-            pushLabelsToStack(narrowerTransitiveLabels,
+            String[] altMaleLabels = engine
+                .getAltMaleLabels(conceptURI);
+            pushLabelsToStack(altMaleLabels,
                 SKOSType.ALTMALE);
           }
         if (types.contains(SKOSType.ALTFEMALE)) {
-            String[] narrowerTransitiveLabels = engine
-                .getNarrowerTransitiveLabels(conceptURI);
-            pushLabelsToStack(narrowerTransitiveLabels,
+            String[] altFemaleLabels = engine
+                .getAltFemaleLabels(conceptURI);
+            pushLabelsToStack(altFemaleLabels,
                 SKOSType.ALTFEMALE);
           }
         if (types.contains(SKOSType.ALTNEUTER)) {
-            String[] narrowerTransitiveLabels = engine
-                .getNarrowerTransitiveLabels(conceptURI);
-            pushLabelsToStack(narrowerTransitiveLabels,
+            String[] altNeuterLabels = engine
+                .getAltNeuterLabels(conceptURI);
+            pushLabelsToStack(altNeuterLabels,
                 SKOSType.ALTNEUTER);
           }
         
