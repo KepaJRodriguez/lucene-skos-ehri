@@ -338,7 +338,7 @@ public class SKOSEngineImpl implements SKOSEngine {
     return readConceptFieldValues(conceptURI, FIELD_ALT_LABEL);
   }
   
-  
+  //EHRI skos extension
   @Override
   public String[] getAltMaleLabels(String conceptURI) throws IOException {
     return readConceptFieldValues(conceptURI, FIELD_ALTMALE_LABEL);
