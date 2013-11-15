@@ -260,6 +260,7 @@ public class SKOSEngineImpl implements SKOSEngine {
     GraphStore graphStore = GraphStoreFactory.create(skosModel) ;
     String sparqlQuery = StringUtils.join(new String[]{
         "PREFIX skos: <http://www.w3.org/2004/02/skos/core#>",
+        "PREFIX skos-ehri: <http://data.ehri-project.eu/skos-extension#>",
         "PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>",
         "INSERT { ?subject rdf:type skos:Concept }",
         "WHERE {",
