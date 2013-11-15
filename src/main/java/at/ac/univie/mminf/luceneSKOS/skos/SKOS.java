@@ -124,4 +124,5 @@ public class SKOS {
     public static final AnnotationProperty prefNeuterLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#prefNeuterLabel" );
     public static final AnnotationProperty altMaleLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#altMaleLabel" );
     public static final AnnotationProperty altFemaleLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#altFemaleLabel" );
+    public static final AnnotationProperty altNeuterLabel = m_model.createAnnotationProperty( "http://data.ehri-project.eu/skos-extension#altNeuterLabel" );
 }
