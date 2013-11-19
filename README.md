@@ -48,12 +48,13 @@ We add the filters in the text_general field indexer as follow:
  	   </analyzer>
 
 After we start Solr the first time we have to wait until each vocabulary is indexed. We do it in several steps:
-	1. Add the first filter (or comment out the second and third filters)
-	2. Start Solr
-	3. Shutdown Solr
-	4. Add the second filter
-	5. Start Solr
-	6. Shutdown Sor
+
+	1 Add the first filter (or comment out the second and third filters)
+	2 Start Solr
+	3 Shutdown Solr
+	4 Add the second filter
+	5 Start Solr
+	6 Shutdown Sor
 	.... etc
 
 A new directory is created: $Solr_home/example/skosdata with the indexes of the vocabularies
