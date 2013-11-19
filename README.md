@@ -57,7 +57,9 @@ After we start Solr the first time we have to wait until each vocabulary is inde
 	6 Shutdown Sor
 	.... etc
 
-A new directory is created: $Solr_home/example/skosdata with the indexes of the vocabularies
+A new directory is created: $Solr_home/example/skosdata with the indexes of the vocabularies.
+
+After that you can index the data.
 
 
 
