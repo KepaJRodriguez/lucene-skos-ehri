@@ -241,4 +241,40 @@ public class SKOSEngineMock implements SKOSEngine {
     
     return new String[0];
   }
+
+@Override
+public String[] getPrefMaleLabels(String conceptURI) throws IOException {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public String[] getPrefFemaleLabels(String conceptURI) throws IOException {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public String[] getPrefNeuterLabels(String conceptURI) throws IOException {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public String[] getAltMaleLabels(String conceptURI) throws IOException {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public String[] getAltFemaleLabels(String conceptURI) throws IOException {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public String[] getAltNeuterLabels(String conceptURI) throws IOException {
+	// TODO Auto-generated method stub
+	return null;
+}
 }
