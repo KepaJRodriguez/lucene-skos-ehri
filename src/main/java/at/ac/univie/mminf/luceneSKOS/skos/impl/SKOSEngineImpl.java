@@ -231,7 +231,7 @@ public class SKOSEngineImpl implements SKOSEngine {
     String name = FilenameUtils.getName(filenameOrURI);
     //File dir = new File("skosdata/" + name + langSig);
     
-    File dir = new File("opt/webapps/solr4/ehri/portal/data/skosdata/" + name + langSig);
+    File dir = new File("/opt/webapps/solr4/ehri/portal/data/skosdata/" + name + langSig);
     
     indexDir = FSDirectory.open(dir);
     
