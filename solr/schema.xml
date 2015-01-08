@@ -1,0 +1,1086 @@
+<?xml version="1.0"?><!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+  
+  http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<schema name="portal schema" version="1.1">
+    <types>
+        <fieldtype name="string" class="solr.StrField" sortMissingLast="true" omitNorms="true"/>
+        <fieldType name="date" class="solr.TrieDateField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+        <fieldType name="int" class="solr.TrieIntField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="float" class="solr.TrieFloatField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="long" class="solr.TrieLongField" precisionStep="0" positionIncrementGap="0"/>
+        <fieldType name="double" class="solr.TrieDoubleField" precisionStep="0" positionIncrementGap="0"/>
+
+        <!-- Case-insensitive exact-match field -->
+        <fieldType name="string_ci" class="solr.TextField" sortMissingLast="true" omitNorms="true">
+            <analyzer>
+                <filter class="solr.LowerCaseFilterFactory" />
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- A general text field that has reasonable, generic
+          cross-language defaults: it tokenizes with StandardTokenizer,
+          removes stop words from case-insensitive "stopwords.txt"
+          (empty by default), and down cases.  At query time only, it
+          also applies synonyms. -->
+        <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100">
+            <analyzer type="index">
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- Remove diacritics and white space tokenizer -->
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" enablePositionIncrements="true"/>
+                <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+            </analyzer>
+            <analyzer type="query">
+                <tokenizer class="solr.WhitespaceTokenizerFactory"/>
+                <!-- Use skos for query time expansion -->
+                <filter class="at.ac.univie.mminf.luceneSKOS.solr.SKOSFilterFactory" skosFile="ehri-terms-skos.rdf" expansionType="LABEL" type="PREF ALT PREFMALE PREFFEMALE" bufferSize="150" />
+                <filter class="at.ac.univie.mminf.luceneSKOS.solr.SKOSFilterFactory" skosFile="multilingplaces.rdf" expansionType="LABEL" type="PREF ALT" bufferSize="150" />
+                <filter class="at.ac.univie.mminf.luceneSKOS.solr.SKOSFilterFactory" skosFile="tm_skos_places.rdf" expansionType="LABEL" type="PREF ALT" bufferSize="150" /> 
+                <filter class="at.ac.univie.mminf.luceneSKOS.solr.SKOSFilterFactory" skosFile="tm_skos_keywords.rdf" expansionType="LABEL" type="PREF ALT" bufferSize="150" /> 
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- Remove diacritics and white space tokenizer -->
+                <!-- treat hyphens equal to whitespace during query time -->
+                <filter class="solr.PatternReplaceFilterFactory" pattern="(\-)" replacement=" " replace="all"/>
+                <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="0" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="0"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" enablePositionIncrements="true"/>
+                <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+
+        <fieldType name="text_general_edge_ngram" class="solr.TextField" positionIncrementGap="100">
+            <analyzer type="index">
+                <tokenizer class="solr.LowerCaseTokenizerFactory"/>
+                <filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="15" side="front"/>
+            </analyzer>
+            <analyzer type="query">
+                <tokenizer class="solr.LowerCaseTokenizerFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- Field type for sorting items. Removes all non-alphanumeric.
+          Pinched from http://stackoverflow.com/a/3783380/285374
+          with ASCIIFoldingFilterFactory substituted for ISOLatin1AccentFactory -->
+        <fieldType name="text_prefix" class="solr.TextField" positionIncrementGap="1" sortMissingLast="true">
+            <analyzer type="index">
+                <tokenizer class="solr.KeywordTokenizerFactory"/>
+                <filter class="solr.ASCIIFoldingFilterFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <!-- Remove non alpha-numeric characters -->
+                <filter class="solr.PatternReplaceFilterFactory" pattern="[^a-zA-Z0-9 ]" replacement="" replace="all"/>
+                <filter class="solr.TrimFilterFactory"/>
+                <!-- Remove leading "the "-->
+                <filter class="solr.PatternReplaceFilterFactory" pattern="^the\s" replacement="" replace="all"/>
+                <filter class="solr.TrimFilterFactory"/>
+                <filter class="solr.EdgeNGramFilterFactory" minGramSize="1" maxGramSize="6"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+            <analyzer type="query">
+                <tokenizer class="solr.KeywordTokenizerFactory"/>
+                <filter class="solr.ASCIIFoldingFilterFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <!-- Remove non alpha-numeric characters -->
+                <filter class="solr.PatternReplaceFilterFactory" pattern="[^a-zA-Z0-9 ]" replacement="" replace="all"/>
+                <filter class="solr.TrimFilterFactory"/>
+                <!-- Remove leading "the "-->
+                <filter class="solr.PatternReplaceFilterFactory" pattern="^the\s" replacement="" replace="all"/>
+                <filter class="solr.TrimFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- some examples for different languages (generally ordered by ISO code) -->
+        <!-- Polish, no present in the distribution, has been added. Read README.md file to install -->
+        <!-- the necessary libraries and stopwords list -->
+
+        <!-- Bulgarian -->
+        <fieldType name="text_bg" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt"/>
+                <filter class="solr.BulgarianStemFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+
+        <!-- Czech -->
+        <!-- changed text_cz by text_cs -->
+        <fieldType name="text_cs" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt"/>
+                <filter class="solr.CzechStemFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- Danish -->
+        <fieldType name="text_da" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.SnowballPorterFilterFactory" language="Danish"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+
+        <!-- English -->
+        <fieldType name="text_en" class="solr.TextField" positionIncrementGap="100">
+            <analyzer type="index">
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <filter class="solr.EnglishPossessiveFilterFactory"/>
+                <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+                <!-- Optionally you may want to use this less aggressive stemmer instead of PorterStemFilterFactory:
+                  <filter class="solr.EnglishMinimalStemFilterFactory"/>
+                -->
+                <filter class="solr.PorterStemFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- German -->
+        <fieldType name="text_de" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.GermanNormalizationFilterFactory"/>
+                <filter class="solr.GermanLightStemFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- less aggressive: <filter class="solr.GermanMinimalStemFilterFactory"/> -->
+                <!-- more aggressive: <filter class="solr.SnowballPorterFilterFactory" language="German2"/> -->
+            </analyzer>
+        </fieldType>
+
+        <!-- Greek -->
+        <fieldType name="text_el" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <!-- greek specific lowercase for sigma -->
+                <filter class="solr.GreekLowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="false" words="generic_swl.txt"/>
+                <filter class="solr.GreekStemFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- Finnish -->
+        <fieldType name="text_fi" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.SnowballPorterFilterFactory" language="Finnish"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- less aggressive: <filter class="solr.FinnishLightStemFilterFactory"/> -->
+            </analyzer>
+        </fieldType>
+
+        <!-- French -->
+        <fieldType name="text_fr" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <!-- removes l', etc -->
+                <filter class="solr.ElisionFilterFactory" ignoreCase="true" articles="lang/contractions_fr.txt"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.FrenchLightStemFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- less aggressive: <filter class="solr.FrenchMinimalStemFilterFactory"/> -->
+                <!-- more aggressive: <filter class="solr.SnowballPorterFilterFactory" language="French"/> -->
+            </analyzer>
+        </fieldType>
+
+
+        <!-- Hungarian -->
+        <fieldType name="text_hu" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.SnowballPorterFilterFactory" language="Hungarian"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- less aggressive: <filter class="solr.HungarianLightStemFilterFactory"/> -->
+            </analyzer>
+        </fieldType>
+
+        <!-- Italian -->
+        <fieldType name="text_it" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <!-- removes l', etc -->
+                <filter class="solr.ElisionFilterFactory" ignoreCase="true" articles="lang/contractions_it.txt"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.ItalianLightStemFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- more aggressive: <filter class="solr.SnowballPorterFilterFactory" language="Italian"/> -->
+            </analyzer>
+        </fieldType>
+
+        <!-- Latvian -->
+        <fieldType name="text_lv" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt"/>
+                <filter class="solr.LatvianStemFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- Dutch -->
+        <fieldType name="text_nl" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.StemmerOverrideFilterFactory" dictionary="lang/stemdict_nl.txt" ignoreCase="false"/>
+                <filter class="solr.SnowballPorterFilterFactory" language="Dutch"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- Norwegian -->
+        <fieldType name="text_no" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.SnowballPorterFilterFactory" language="Norwegian"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- less aggressive: <filter class="solr.NorwegianLightStemFilterFactory" variant="nb"/> -->
+                <!-- singular/plural: <filter class="solr.NorwegianMinimalStemFilterFactory" variant="nb"/> -->
+                <!-- The "light" and "minimal" stemmers support variants: nb=Bokmål, nn=Nynorsk, no=Both -->
+            </analyzer>
+        </fieldType>
+
+        <!-- Polish -->
+        <fieldType name="text_pl" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" enablePositionIncrements="true"/>
+                <filter class="solr.MorfologikFilterFactory"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- Romanian -->
+        <fieldType name="text_ro" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt"/>
+                <filter class="solr.SnowballPorterFilterFactory" language="Romanian"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+            </analyzer>
+        </fieldType>
+
+        <!-- Russian -->
+        <fieldType name="text_ru" class="solr.TextField" positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" ignoreCase="true" words="generic_swl.txt" format="snowball"/>
+                <filter class="solr.SnowballPorterFilterFactory" language="Russian"/>
+                <filter class="solr.ICUFoldingFilterFactory"/>
+                <!-- less aggressive: <filter class="solr.RussianLightStemFilterFactory"/> -->
+            </analyzer>
+        </fieldType>
+
+        <fieldType name="location" class="solr.LatLonType" subFieldSuffix="_coordinate"/>
+    </types>
+    <fields>
+        <!-- general -->
+        <field name="id" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
+        <field name="type" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
+        <field name="itemId" type="string" indexed="true" stored="true" multiValued="false" required="true"/>
+        <field name="gid" type="long" indexed="true" stored="true" multiValued="false" required="false"/>
+        <field name="childCount" type="int" indexed="true" stored="true" default="0" multiValued="false" required="false"/>
+        <field name="parentId" type="string" indexed="true" stored="true" multiValued="true"/>
+        <field name="dateStart" type="date" indexed="true" stored="true" multiValued="false"/>
+        <field name="dateEnd" type="date" indexed="true" stored="true" multiValued="false"/>
+        <field name="dateRange" type="date" indexed="true" stored="true" multiValued="true"/>
+        <field name="isTopLevel" type="boolean" indexed="true" stored="true" multiValued="false"/>
+        <field name="isParent" type="boolean" indexed="true" stored="true" multiValued="false" default="false" />
+        <field name="repositoryId" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="repositoryName" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="holderId" type="string" indexed="true" stored="true" multiValued="true"/>
+        <field name="holderName" type="string" indexed="true" stored="true" multiValued="true"/>
+        <field name="groupId" type="string" indexed="true" stored="true" multiValued="true"/>
+        <field name="groupName" type="string" indexed="true" stored="true" multiValued="true"/>
+        <field name="active" type="boolean" indexed="true" stored="true" default="true"/>
+        <field name="restricted" type="boolean" indexed="true" stored="true" default="false"/>
+        <field name="accessibleTo" type="string" indexed="true" stored="true" multiValued="true" default="ALLUSERS"/>
+        <field name="identifier" type="string_ci" indexed="true" stored="true" multiValued="false"/>
+        <field name="otherIdentifiers" type="string" indexed="true" stored="true" multiValued="true"/>
+        <field name="name" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="name_ngram" type="text_general_edge_ngram" indexed="true" stored="true" multiValued="true"/>
+        <field name="name_sort" type="text_prefix" indexed="true" stored="false" multiValued="false"/>
+        <field name="title" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="text" type="text_general" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="otherFormsOfName" type="text_general" indexed="true" stored="true" multiValued="true"/>
+        <field name="parallelFormsOfName" type="text_general" indexed="true" stored="true" multiValued="true"/>
+        <!-- altName has a string case-insensitive type more suited for acronyms
+             that may also - and this has happened! - be multi-lingual stop words. -->
+        <field name="altName" type="string_ci" indexed="true" stored="true" multiValued="true"/>
+        <field name="lastUpdated" type="date" indexed="true" stored="true" multiValued="false"/>
+        <field name="publicationStatus" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="copyrightStatus" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="scope" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="scopeAndContent" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="languageCode" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="countryCode" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="countryName" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="depthOfDescription" type="int" indexed="true" stored="true" multiValued="false"/>
+        <field name="levelOfDescription" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="typeOfEntity" type="string" indexed="true" stored="true" multiValued="false"/>
+        <field name="accessPoints" type="string_ci" indexed="true" stored="true" multiValued="true"/>
+        <field name="accessPointNames" type="text_general" indexed="true" stored="true" multiValued="true"/>
+        <field name="targets" type="string_ci" indexed="true" stored="true" multiValued="true"/>
+        <field name="targetNames" type="text_general" indexed="true" stored="true" multiValued="true"/>
+        <field name="addresses" type="text_general" indexed="true" stored="true" multiValued="true"/>
+        <field name="priority" type="int" indexed="true" stored="true" multiValued="false"/>
+        <field name="creationProcess" type="string" indexed="true" stored="true" multiValued="false" default="MANUAL"/>
+        <field name="charCount" type="int" indexed="true" stored="true" multiValued="false"/>
+        <field name="latitude" type="double" indexed="true" stored="true" multiValued="false"/>
+        <field name="longitude" type="double" indexed="true" stored="true" multiValued="false"/>
+        <field name="location" type="location" indexed="true" stored="true" multiValued="false"/>
+        <field name="isPromotable" type="boolean" indexed="true" stored="true" multiValued="false" default="false"/>
+        <field name="promotionScore" type="int" indexed="true" stored="true" multiValued="false" default="0"/>
+        <field name="_version_" type="long" indexed="true" stored="true"/>
+
+        <dynamicField name="*_i" type="int" indexed="true" stored="true"/>
+        <dynamicField name="*_is" type="int" indexed="true" stored="true" multiValued="true"/>
+        <dynamicField name="*_s" type="string" indexed="true" stored="true"/>
+        <dynamicField name="*_ss" type="string" indexed="true" stored="true" multiValued="true"/>
+        <dynamicField name="*_b" type="boolean" indexed="true" stored="true"/>
+        <dynamicField name="*_t" type="text_general" indexed="true" stored="true"/>
+        <dynamicField name="*_f" type="float" indexed="true" stored="true"/>
+        <dynamicField name="*_fs" type="float" indexed="true" stored="true" multiValued="true"/>
+        <dynamicField name="*_d" type="double" indexed="true" stored="true"/>
+        <dynamicField name="*_ds" type="double" indexed="true" stored="true" multiValued="true"/>
+        <dynamicField name="*_dt" type="date" indexed="true" stored="true"/>
+        <dynamicField name="*_dts" type="date" indexed="true" stored="true" multiValued="true"/>
+        <dynamicField name="*_coordinate" type="double" indexed="true" stored="false"/>
+
+        <!-- New fields for language identification -->
+        <field name="txt_en" type="text_en" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_hu" type="text_hu" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_ru" type="text_ru" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_pl" type="text_pl" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_de" type="text_de" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_nl" type="text_nl" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_cs" type="text_general" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_it" type="text_it" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_fr" type="text_fr" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_uk" type="text_general" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_hr" type="text_general" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_da" type="text_da" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_el" type="text_el" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_lv" type="text_lv" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_no" type="text_no" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_ro" type="text_ro" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+        <field name="txt_generic" type="text_general" indexed="true" stored="false" termVectors="true" multiValued="true"/>
+
+        <!-- Language specific fields -->
+        <field name="title_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_en" type="text_en" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_de" type="text_de" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_uk" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_pl" type="text_pl" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_ru" type="text_ru" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_hu" type="text_hu" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_nl" type="text_nl" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_cs" type="text_cs" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_it" type="text_it" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_fr" type="text_fr" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_hr" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_da" type="text_da" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_el" type="text_el" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_lv" type="text_lv" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_no" type="text_no" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <field name="title_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_ro" type="text_ro" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+        <!-- when language detection modul is not able to identify the language -->
+        <!-- the field will be annotated as "generic" -->
+        <field name="title_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="name_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="otherFormsOfName_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="parallelFormsOfName_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="scopeAndContent_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivalHistory_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="archivistNote_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="abstract_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="biographicalHistory_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="false"/>
+        <field name="accessPoints_generic" type="text_general" indexed="true" stored="true" termVectors="true" multiValued="true"/>
+
+    </fields>
+
+    <!-- field to use to determine and enforce document uniqueness. -->
+    <uniqueKey>id</uniqueKey>
+
+    <!-- Copy all string and text values to text field -->
+    <copyField source="name" dest="name_ngram"/>
+    <copyField source="name" dest="name_sort"/>
+    <copyField source="otherFormsOfName" dest="name_ngram"/>
+    <copyField source="parallelFormsOfName" dest="name_ngram"/>
+    <copyField source="otherFormsOfName" dest="altName"/>
+    <copyField source="parallelFormsOfName" dest="altName"/>
+    <copyField source="name" dest="title"/>
+    <copyField source="itemId" dest="text"/>
+    <copyField source="name" dest="text"/>
+    <copyField source="identifier" dest="text"/>
+    <copyField source="title" dest="text"/>
+    <copyField source="otherFormsOfName" dest="text"/>
+    <copyField source="parallelFormsOfName" dest="text"/>
+    <copyField source="holderName" dest="text"/>
+    <copyField source="addresses" dest="text"/>
+    <copyField source="accessPoints" dest="text"/>
+    <copyField source="accessPoints" dest="accessPointNames" />
+    <copyField source="targets" dest="targetNames"/>
+    <copyField source="targets" dest="text"/>
+    <copyField source="scopeAndContent" dest="text"/>
+    <copyField source="*_s" dest="text"/>
+    <copyField source="*_t" dest="text"/>
+    <copyField source="*_ss" dest="text"/>
+
+    <!-- Copy of fields after language detection into txt_lang fields for multilingual indexing-->
+    <!-- Copy of fields after language detection into text field for term expansion-->
+    <copyField source="title_en" dest="txt_en"/>
+    <copyField source="name_en" dest="txt_en"/>
+    <copyField source="name_en" dest="name"/>
+    <copyField source="name_en" dest="title"/>
+    <copyField source="name_en" dest="text"/>
+    <copyField source="name_en" dest="name_sort"/>
+    <copyField source="name_en" dest="name_ngram"/>
+    <copyField source="scopeAndContent_en" dest="txt_en"/>
+    <copyField source="scopeAndContent_en" dest="text"/>
+    <copyField source="archivalHistory_en" dest="txt_en"/>
+    <copyField source="archivalHistory_en" dest="text"/>
+    <copyField source="archivistNote_en" dest="txt_en"/>
+    <copyField source="archivistNote_en" dest="text"/>
+    <copyField source="abstract_en" dest="txt_en"/>
+    <copyField source="abstract_en" dest="text"/>
+    <copyField source="biographicalHistory_en" dest="txt_en"/>
+    <copyField source="biographicalHistory_en" dest="text"/>
+    <copyField source="accessPoints_en" dest="accessPoints"/>
+    <copyField source="accessPoints_en" dest="txt_en"/>
+    <copyField source="accessPoints_en" dest="text"/>
+    <copyField source="otherFormsOfName_en" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_en" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_en" dest="txt_en"/>
+    <copyField source="parallelFormsOfName_en" dest="txt_en"/>
+    <copyField source="otherFormsOfName_en" dest="text"/>
+    <copyField source="parallelFormsOfName_en" dest="text"/>
+
+    <copyField source="title_hu" dest="txt_hu"/>
+    <copyField source="name_hu" dest="txt_hu"/>
+    <copyField source="name_hu" dest="name"/>
+    <copyField source="name_hu" dest="title"/>
+    <copyField source="name_hu" dest="name_sort"/>
+    <copyField source="name_hu" dest="name_ngram"/>
+    <copyField source="scopeAndContent_hu" dest="txt_hu"/>
+    <copyField source="archivalHistory_hu" dest="txt_hu"/>
+    <copyField source="archivistNote_hu" dest="txt_hu"/>
+    <copyField source="abstract_hu" dest="txt_hu"/>
+    <copyField source="biographicalHistory_hu" dest="txt_hu"/>
+    <copyField source="accessPoints_hu" dest="txt_hu"/>
+    <copyField source="title_hu" dest="text"/>
+    <copyField source="name_hu" dest="text"/>
+    <copyField source="scopeAndContent_hu" dest="text"/>
+    <copyField source="archivalHistory_hu" dest="text"/>
+    <copyField source="archivistNote_hu" dest="text"/>
+    <copyField source="abstract_hu" dest="text"/>
+    <copyField source="biographicalHistory_hu" dest="text"/>
+    <copyField source="accessPoints_hu" dest="accessPoints"/>
+    <copyField source="accessPoints_hu" dest="text"/>
+    <copyField source="otherFormsOfName_hu" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_hu" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_hu" dest="txt_en"/>
+    <copyField source="parallelFormsOfName_hu" dest="txt_hu"/>
+    <copyField source="otherFormsOfName_hu" dest="text"/>
+    <copyField source="parallelFormsOfName_hu" dest="text"/>
+
+    <copyField source="title_ru" dest="txt_ru"/>
+    <copyField source="name_ru" dest="txt_ru"/>
+    <copyField source="name_ru" dest="name"/>
+    <copyField source="name_ru" dest="title"/>
+    <copyField source="name_ru" dest="name_sort"/>
+    <copyField source="name_ru" dest="name_ngram"/>
+    <copyField source="scopeAndContent_ru" dest="txt_ru"/>
+    <copyField source="archivalHistory_ru" dest="txt_ru"/>
+    <copyField source="archivistNote_ru" dest="txt_ru"/>
+    <copyField source="abstract_ru" dest="txt_ru"/>
+    <copyField source="biographicalHistory_ru" dest="txt_ru"/>
+    <copyField source="accessPoints_ru" dest="txt_ru"/>
+    <copyField source="title_ru" dest="text"/>
+    <copyField source="name_ru" dest="text"/>
+    <copyField source="scopeAndContent_ru" dest="text"/>
+    <copyField source="archivalHistory_ru" dest="text"/>
+    <copyField source="archivistNote_ru" dest="text"/>
+    <copyField source="abstract_ru" dest="text"/>
+    <copyField source="biographicalHistory_ru" dest="text"/>
+    <copyField source="accessPoints_ru" dest="accessPoints"/>
+    <copyField source="accessPoints_ru" dest="text"/>
+    <copyField source="otherFormsOfName_ru" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_ru" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_ru" dest="txt_ru"/>
+    <copyField source="parallelFormsOfName_ru" dest="txt_ru"/>
+    <copyField source="otherFormsOfName_ru" dest="text"/>
+    <copyField source="parallelFormsOfName_ru" dest="text"/>
+
+    <copyField source="title_pl" dest="txt_pl"/>
+    <copyField source="name_pl" dest="txt_pl"/>
+    <copyField source="name_pl" dest="name"/>
+    <copyField source="name_pl" dest="title"/>
+    <copyField source="name_pl" dest="name_sort"/>
+    <copyField source="name_pl" dest="name_ngram"/>
+    <copyField source="scopeAndContent_pl" dest="txt_pl"/>
+    <copyField source="archivalHistory_pl" dest="txt_pl"/>
+    <copyField source="archivistNote_pl" dest="txt_pl"/>
+    <copyField source="abstract_pl" dest="txt_pl"/>
+    <copyField source="biographicalHistory_pl" dest="txt_pl"/>
+    <copyField source="accessPoints_pl" dest="txt_pl"/>
+    <copyField source="title_pl" dest="text"/>
+    <copyField source="name_pl" dest="text"/>
+    <copyField source="scopeAndContent_pl" dest="text"/>
+    <copyField source="archivalHistory_pl" dest="text"/>
+    <copyField source="archivistNote_pl" dest="text"/>
+    <copyField source="abstract_pl" dest="text"/>
+    <copyField source="biographicalHistory_pl" dest="text"/>
+    <copyField source="accessPoints_pl" dest="accessPoints"/>
+    <copyField source="accessPoints_pl" dest="text"/>
+    <copyField source="otherFormsOfName_pl" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_pl" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_pl" dest="txt_pl"/>
+    <copyField source="parallelFormsOfName_pl" dest="txt_pl"/>
+    <copyField source="otherFormsOfName_pl" dest="text"/>
+    <copyField source="parallelFormsOfName_pl" dest="text"/>
+
+    <copyField source="title_de" dest="txt_de"/>
+    <copyField source="name_de" dest="txt_de"/>
+    <copyField source="name_de" dest="name"/>
+    <copyField source="name_de" dest="title"/>
+    <copyField source="name_de" dest="name_sort"/>
+    <copyField source="name_de" dest="name_ngram"/>
+    <copyField source="scopeAndContent_de" dest="txt_de"/>
+    <copyField source="archivalHistory_de" dest="txt_de"/>
+    <copyField source="archivistNote_de" dest="txt_de"/>
+    <copyField source="abstract_de" dest="txt_de"/>
+    <copyField source="biographicalHistory_de" dest="txt_de"/>
+    <copyField source="accessPoints_de" dest="txt_de"/>
+    <copyField source="title_de" dest="text"/>
+    <copyField source="name_de" dest="text"/>
+    <copyField source="scopeAndContent_de" dest="text"/>
+    <copyField source="archivalHistory_de" dest="text"/>
+    <copyField source="archivistNote_de" dest="text"/>
+    <copyField source="abstract_de" dest="text"/>
+    <copyField source="biographicalHistory_de" dest="text"/>
+    <copyField source="accessPoints_de" dest="accessPoints"/>
+    <copyField source="accessPoints_de" dest="text"/>
+    <copyField source="otherFormsOfName_de" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_de" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_de" dest="txt_de"/>
+    <copyField source="parallelFormsOfName_de" dest="txt_de"/>
+    <copyField source="otherFormsOfName_de" dest="text"/>
+    <copyField source="parallelFormsOfName_de" dest="text"/>
+
+    <copyField source="title_nl" dest="txt_nl"/>
+    <copyField source="name_nl" dest="txt_nl"/>
+    <copyField source="name_nl" dest="name"/>
+    <copyField source="name_nl" dest="title"/>
+    <copyField source="name_nl" dest="name_sort"/>
+    <copyField source="name_nl" dest="name_ngram"/>
+    <copyField source="scopeAndContent_nl" dest="txt_nl"/>
+    <copyField source="archivalHistory_nl" dest="txt_nl"/>
+    <copyField source="archivistNote_nl" dest="txt_nl"/>
+    <copyField source="abstract_nl" dest="txt_nl"/>
+    <copyField source="biographicalHistory_nl" dest="txt_nl"/>
+    <copyField source="accessPoints_nl" dest="txt_nl"/>
+    <copyField source="title_nl" dest="text"/>
+    <copyField source="name_nl" dest="text"/>
+    <copyField source="scopeAndContent_nl" dest="text"/>
+    <copyField source="archivalHistory_nl" dest="text"/>
+    <copyField source="archivistNote_nl" dest="text"/>
+    <copyField source="abstract_nl" dest="text"/>
+    <copyField source="biographicalHistory_nl" dest="text"/>
+    <copyField source="accessPoints_nl" dest="accessPoints"/>
+    <copyField source="accessPoints_nl" dest="text"/>
+    <copyField source="otherFormsOfName_nl" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_nl" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_nl" dest="txt_nl"/>
+    <copyField source="parallelFormsOfName_nl" dest="txt_nl"/>
+    <copyField source="otherFormsOfName_nl" dest="text"/>
+    <copyField source="parallelFormsOfName_nl" dest="text"/>
+
+    <copyField source="title_cs" dest="txt_cs"/>
+    <copyField source="title_cs" dest="text"/>
+    <copyField source="name_cs" dest="txt_cs"/>
+    <copyField source="name_cs" dest="text"/>
+    <copyField source="name_cs" dest="name"/>
+    <copyField source="name_cs" dest="title"/>
+    <copyField source="name_cs" dest="name_sort"/>
+    <copyField source="name_cs" dest="name_ngram"/>
+    <copyField source="scopeAndContent_cs" dest="text"/>
+    <copyField source="archivalHistory_cs" dest="text"/>
+    <copyField source="archivistNote_cs" dest="text"/>
+    <copyField source="abstract_cs" dest="text"/>
+    <copyField source="biographicalHistory_cs" dest="text"/>
+    <copyField source="accessPoints_cs" dest="accessPoints"/>
+    <copyField source="accessPoints_cs" dest="text"/>
+    <copyField source="otherFormsOfName_cs" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_cs" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_cs" dest="text"/>
+    <copyField source="parallelFormsOfName_cs" dest="text"/>
+    <copyField source="scopeAndContent_cs" dest="txt_cs"/>
+    <copyField source="archivalHistory_cs" dest="txt_cs"/>
+    <copyField source="archivistNote_cs" dest="txt_cs"/>
+    <copyField source="abstract_cs" dest="txt_cs"/>
+    <copyField source="biographicalHistory_cs" dest="txt_cs"/>
+    <copyField source="accessPoints_cs" dest="txt_cs"/>
+    <copyField source="otherFormsOfName_cs" dest="txt_cs"/>
+    <copyField source="parallelFormsOfName_cs" dest="txt_cs"/>
+
+    <copyField source="title_it" dest="txt_it"/>
+    <copyField source="name_it" dest="txt_it"/>
+    <copyField source="name_it" dest="name"/>
+    <copyField source="name_it" dest="title"/>
+    <copyField source="name_it" dest="name_sort"/>
+    <copyField source="name_it" dest="name_ngram"/>
+    <copyField source="scopeAndContent_it" dest="txt_it"/>
+    <copyField source="archivalHistory_it" dest="txt_it"/>
+    <copyField source="archivistNote_it" dest="txt_it"/>
+    <copyField source="abstract_it" dest="txt_it"/>
+    <copyField source="biographicalHistory_it" dest="txt_it"/>
+    <copyField source="accessPoints_it" dest="txt_it"/>
+    <copyField source="title_it" dest="text"/>
+    <copyField source="name_it" dest="text"/>
+    <copyField source="scopeAndContent_it" dest="text"/>
+    <copyField source="archivalHistory_it" dest="text"/>
+    <copyField source="archivistNote_it" dest="text"/>
+    <copyField source="abstract_it" dest="text"/>
+    <copyField source="biographicalHistory_it" dest="text"/>
+    <copyField source="accessPoints_it" dest="accessPoints"/>
+    <copyField source="accessPoints_it" dest="text"/>
+    <copyField source="otherFormsOfName_it" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_it" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_it" dest="txt_it"/>
+    <copyField source="parallelFormsOfName_it" dest="txt_it"/>
+    <copyField source="otherFormsOfName_it" dest="text"/>
+    <copyField source="parallelFormsOfName_it" dest="text"/>
+
+    <copyField source="title_fr" dest="txt_fr"/>
+    <copyField source="name_fr" dest="txt_fr"/>
+    <copyField source="name_fr" dest="name"/>
+    <copyField source="name_fr" dest="title"/>
+    <copyField source="name_fr" dest="name_sort"/>
+    <copyField source="name_fr" dest="name_ngram"/>
+    <copyField source="scopeAndContent_fr" dest="txt_fr"/>
+    <copyField source="archivalHistory_fr" dest="txt_fr"/>
+    <copyField source="archivistNote_fr" dest="txt_fr"/>
+    <copyField source="abstract_fr" dest="txt_fr"/>
+    <copyField source="biographicalHistory_fr" dest="txt_fr"/>
+    <copyField source="accessPoints_fr" dest="txt_fr"/>
+    <copyField source="title_fr" dest="text"/>
+    <copyField source="name_fr" dest="text"/>
+    <copyField source="scopeAndContent_fr" dest="text"/>
+    <copyField source="archivalHistory_fr" dest="text"/>
+    <copyField source="archivistNote_fr" dest="text"/>
+    <copyField source="abstract_fr" dest="text"/>
+    <copyField source="biographicalHistory_fr" dest="text"/>
+    <copyField source="accessPoints_fr" dest="accessPoints"/>
+    <copyField source="accessPoints_fr" dest="text"/>
+    <copyField source="otherFormsOfName_fr" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_fr" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_fr" dest="txt_fr"/>
+    <copyField source="parallelFormsOfName_fr" dest="txt_fr"/>
+    <copyField source="otherFormsOfName_fr" dest="text"/>
+    <copyField source="parallelFormsOfName_fr" dest="text"/>
+
+    <copyField source="title_uk" dest="text"/>
+    <copyField source="name_uk" dest="text"/>
+    <copyField source="name_uk" dest="name"/>
+    <copyField source="name_uk" dest="title"/>
+    <copyField source="name_uk" dest="name_sort"/>
+    <copyField source="name_uk" dest="name_ngram"/>
+    <copyField source="scopeAndContent_uk" dest="text"/>
+    <copyField source="archivalHistory_uk" dest="text"/>
+    <copyField source="archivistNote_uk" dest="text"/>
+    <copyField source="abstract_uk" dest="text"/>
+    <copyField source="biographicalHistory_uk" dest="text"/>
+    <copyField source="accessPoints_uk" dest="accessPoints"/>
+    <copyField source="accessPoints_uk" dest="text"/>
+    <copyField source="otherFormsOfName_uk" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_uk" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_uk" dest="text"/>
+    <copyField source="parallelFormsOfName_uk" dest="text"/>
+
+    <copyField source="title_hr" dest="text"/>
+    <copyField source="name_hr" dest="text"/>
+    <copyField source="name_hr" dest="name"/>
+    <copyField source="name_hr" dest="title"/>
+    <copyField source="name_hr" dest="name_sort"/>
+    <copyField source="name_hr" dest="name_ngram"/>
+    <copyField source="scopeAndContent_hr" dest="text"/>
+    <copyField source="archivalHistory_hr" dest="text"/>
+    <copyField source="archivistNote_hr" dest="text"/>
+    <copyField source="abstract_hr" dest="text"/>
+    <copyField source="biographicalHistory_hr" dest="text"/>
+    <copyField source="accessPoints_hr" dest="accessPoints"/>
+    <copyField source="accessPoints_hr" dest="text"/>
+    <copyField source="otherFormsOfName_en" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_en" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_en" dest="text"/>
+    <copyField source="parallelFormsOfName_hr" dest="text"/>
+
+    <copyField source="title_da" dest="txt_da"/>
+    <copyField source="name_da" dest="txt_da"/>
+    <copyField source="name_da" dest="name"/>
+    <copyField source="name_da" dest="title"/>
+    <copyField source="name_da" dest="name_sort"/>
+    <copyField source="name_da" dest="name_ngram"/>
+    <copyField source="scopeAndContent_da" dest="txt_da"/>
+    <copyField source="archivalHistory_da" dest="txt_da"/>
+    <copyField source="archivistNote_da" dest="txt_da"/>
+    <copyField source="abstract_da" dest="txt_da"/>
+    <copyField source="biographicalHistory_da" dest="txt_da"/>
+    <copyField source="accessPoints_da" dest="txt_da"/>
+    <copyField source="title_da" dest="text"/>
+    <copyField source="name_da" dest="text"/>
+    <copyField source="scopeAndContent_da" dest="text"/>
+    <copyField source="archivalHistory_da" dest="text"/>
+    <copyField source="archivistNote_da" dest="text"/>
+    <copyField source="abstract_da" dest="text"/>
+    <copyField source="biographicalHistory_da" dest="text"/>
+    <copyField source="accessPoints_da" dest="accessPoints"/>
+    <copyField source="accessPoints_da" dest="text"/>
+    <copyField source="otherFormsOfName_da" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_da" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_da" dest="txt_da"/>
+    <copyField source="parallelFormsOfName_da" dest="txt_da"/>
+    <copyField source="otherFormsOfName_da" dest="text"/>
+    <copyField source="parallelFormsOfName_da" dest="text"/>
+
+    <copyField source="title_el" dest="txt_el"/>
+    <copyField source="name_el" dest="txt_el"/>
+    <copyField source="name_el" dest="name"/>
+    <copyField source="name_el" dest="title"/>
+    <copyField source="name_el" dest="name_sort"/>
+    <copyField source="name_el" dest="name_ngram"/>
+    <copyField source="scopeAndContent_el" dest="txt_el"/>
+    <copyField source="archivalHistory_el" dest="txt_el"/>
+    <copyField source="archivistNote_el" dest="txt_el"/>
+    <copyField source="abstract_el" dest="txt_el"/>
+    <copyField source="biographicalHistory_el" dest="txt_el"/>
+    <copyField source="accessPoints_el" dest="txt_el"/>
+    <copyField source="title_el" dest="text"/>
+    <copyField source="name_el" dest="text"/>
+    <copyField source="scopeAndContent_el" dest="text"/>
+    <copyField source="archivalHistory_el" dest="text"/>
+    <copyField source="archivistNote_el" dest="text"/>
+    <copyField source="abstract_el" dest="text"/>
+    <copyField source="biographicalHistory_el" dest="text"/>
+    <copyField source="accessPoints_el" dest="accessPoints"/>
+    <copyField source="accessPoints_el" dest="text"/>
+    <copyField source="otherFormsOfName_el" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_el" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_el" dest="txt_el"/>
+    <copyField source="parallelFormsOfName_el" dest="txt_el"/>
+    <copyField source="otherFormsOfName_el" dest="text"/>
+    <copyField source="parallelFormsOfName_el" dest="text"/>
+
+    <copyField source="title_lv" dest="txt_lv"/>
+    <copyField source="name_lv" dest="txt_lv"/>
+    <copyField source="name_lv" dest="name"/>
+    <copyField source="name_lv" dest="title"/>
+    <copyField source="name_lv" dest="name_sort"/>
+    <copyField source="name_lv" dest="name_ngram"/>
+    <copyField source="scopeAndContent_lv" dest="txt_lv"/>
+    <copyField source="archivalHistory_lv" dest="txt_lv"/>
+    <copyField source="archivistNote_lv" dest="txt_lv"/>
+    <copyField source="abstract_lv" dest="txt_lv"/>
+    <copyField source="biographicalHistory_lv" dest="txt_lv"/>
+    <copyField source="accessPoints_lv" dest="txt_lv"/>
+    <copyField source="title_lv" dest="text"/>
+    <copyField source="name_lv" dest="text"/>
+    <copyField source="scopeAndContent_lv" dest="text"/>
+    <copyField source="archivalHistory_lv" dest="text"/>
+    <copyField source="archivistNote_lv" dest="text"/>
+    <copyField source="abstract_lv" dest="text"/>
+    <copyField source="biographicalHistory_lv" dest="text"/>
+    <copyField source="accessPoints_lv" dest="accessPoints"/>
+    <copyField source="accessPoints_lv" dest="text"/>
+    <copyField source="otherFormsOfName_lv" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_lv" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_lv" dest="txt_lv"/>
+    <copyField source="parallelFormsOfName_lv" dest="txt_lv"/>
+    <copyField source="otherFormsOfName_lv" dest="text"/>
+    <copyField source="parallelFormsOfName_lv" dest="text"/>
+
+    <copyField source="title_no" dest="txt_no"/>
+    <copyField source="name_no" dest="txt_no"/>
+    <copyField source="name_no" dest="name"/>
+    <copyField source="name_no" dest="title"/>
+    <copyField source="name_no" dest="name_sort"/>
+    <copyField source="name_no" dest="name_ngram"/>
+    <copyField source="scopeAndContent_no" dest="txt_no"/>
+    <copyField source="archivalHistory_no" dest="txt_no"/>
+    <copyField source="archivistNote_no" dest="txt_no"/>
+    <copyField source="abstract_no" dest="txt_no"/>
+    <copyField source="biographicalHistory_no" dest="txt_no"/>
+    <copyField source="accessPoints_no" dest="txt_no"/>
+    <copyField source="title_no" dest="text"/>
+    <copyField source="name_no" dest="text"/>
+    <copyField source="scopeAndContent_no" dest="text"/>
+    <copyField source="archivalHistory_no" dest="text"/>
+    <copyField source="archivistNote_no" dest="text"/>
+    <copyField source="abstract_no" dest="text"/>
+    <copyField source="biographicalHistory_no" dest="text"/>
+    <copyField source="accessPoints_no" dest="accessPoints"/>
+    <copyField source="accessPoints_no" dest="text"/>
+    <copyField source="otherFormsOfName_no" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_no" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_no" dest="txt_no"/>
+    <copyField source="parallelFormsOfName_no" dest="txt_no"/>
+    <copyField source="otherFormsOfName_no" dest="text"/>
+    <copyField source="parallelFormsOfName_no" dest="text"/>
+
+    <copyField source="title_ro" dest="txt_ro"/>
+    <copyField source="name_ro" dest="txt_ro"/>
+    <copyField source="name_ro" dest="name"/>
+    <copyField source="name_ro" dest="title"/>
+    <copyField source="name_ro" dest="name_sort"/>
+    <copyField source="name_ro" dest="name_ngram"/>
+    <copyField source="scopeAndContent_ro" dest="txt_ro"/>
+    <copyField source="archivalHistory_ro" dest="txt_ro"/>
+    <copyField source="archivistNote_ro" dest="txt_ro"/>
+    <copyField source="abstract_ro" dest="txt_ro"/>
+    <copyField source="biographicalHistory_ro" dest="txt_ro"/>
+    <copyField source="accessPoints_ro" dest="txt_ro"/>
+    <copyField source="title_ro" dest="text"/>
+    <copyField source="name_ro" dest="text"/>
+    <copyField source="scopeAndContent_ro" dest="text"/>
+    <copyField source="archivalHistory_ro" dest="text"/>
+    <copyField source="archivistNote_ro" dest="text"/>
+    <copyField source="abstract_ro" dest="text"/>
+    <copyField source="biographicalHistory_ro" dest="text"/>
+    <copyField source="accessPoints_ro" dest="accessPoints"/>
+    <copyField source="accessPoints_ro" dest="text"/>
+    <copyField source="otherFormsOfName_ro" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_ro" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_ro" dest="txt_ro"/>
+    <copyField source="parallelFormsOfName_ro" dest="txt_ro"/>
+    <copyField source="otherFormsOfName_ro" dest="text"/>
+    <copyField source="parallelFormsOfName_ro" dest="text"/>
+
+    <copyField source="title_generic" dest="text"/>
+    <copyField source="name_generic" dest="text"/>
+    <copyField source="name_generic" dest="name"/>
+    <copyField source="name_generic" dest="title"/>
+    <copyField source="name_generic" dest="name_sort"/>
+    <copyField source="name_generic" dest="name_ngram"/>
+    <copyField source="scopeAndContent_generic" dest="text"/>
+    <copyField source="archivalHistory_generic" dest="text"/>
+    <copyField source="archivistNote_generic" dest="text"/>
+    <copyField source="abstract_generic" dest="text"/>
+    <copyField source="biographicalHistory_generic" dest="text"/>
+    <copyField source="accessPoints_generic" dest="accessPoints"/>
+    <copyField source="accessPoints_generic" dest="text"/>
+    <copyField source="otherFormsOfName_generic" dest="otherFormsOfName"/>
+    <copyField source="parallelFormsOfName_generic" dest="parallelFormsOfName"/>
+    <copyField source="otherFormsOfName_generic" dest="text"/>
+    <copyField source="parallelFormsOfName_generic" dest="text"/>
+
+    <!-- field for the QueryParser to use when an explicit fieldname is absent -->
+    <defaultSearchField>text</defaultSearchField>
+
+    <!-- SolrQueryParser configuration: defaultOperator="AND|OR" -->
+    <solrQueryParser defaultOperator="OR"/>
+
+    <!-- change ranking model to BM25/Okapi. It works better than the default Vector Space Model! -->
+    <similarity class="solr.BM25SimilarityFactory"/>
+</schema>
